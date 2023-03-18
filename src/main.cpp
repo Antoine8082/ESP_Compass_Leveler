@@ -28,32 +28,25 @@ int mode = 0; // 0 pour le mode de mesure, 1 pour le mode de calibration
 int calibrationType = 0; // 0 pour la calibration du niveau, 1 pour la calibration de la boussole
 
 void saveOffsets(float accX, float accY, float accZ, float magX, float magY, float magZ) {
-    // Conversion des offsets en entiers signés sur 2 octets pour économiser de l'espace
-    int16_t accOffsets[3] = {(int16_t)(accX * 1000), (int16_t)(accY * 1000), (int16_t)(accZ * 1000)};
-    int16_t magOffsets[3] = {(int16_t)(magX * 1000), (int16_t)(magY * 1000), (int16_t)(magZ * 1000)};
-
     // Écriture des offsets dans la mémoire EEPROM
-    EEPROM.put(0, accOffsets);
-    EEPROM.put(sizeof(accOffsets), magOffsets);
+    EEPROM.put(0, accX);
+    EEPROM.put(sizeof(float), accY);
+    EEPROM.put(2 * sizeof(float), accZ);
+    EEPROM.put(3 * sizeof(float), magX);
+    EEPROM.put(4 * sizeof(float), magY);
+    EEPROM.put(5 * sizeof(float), magZ);
     EEPROM.commit();
 }
 
 void loadOffsets(float &accX, float &accY, float &accZ, float &magX, float &magY, float &magZ) {
     // Lecture des offsets dans la mémoire EEPROM
-    int16_t accOffsets[3];
-    int16_t magOffsets[3];
-    EEPROM.get(0, accOffsets);
-    EEPROM.get(sizeof(accOffsets), magOffsets);
-
-    // Conversion des entiers signés en floats
-    accX = (float)accOffsets[0] / 1000.0;
-    accY = (float)accOffsets[1] / 1000.0;
-    accZ = (float)accOffsets[2] / 1000.0;
-    magX = (float)magOffsets[0] / 1000.0;
-    magY = (float)magOffsets[1] / 1000.0;
-    magZ = (float)magOffsets[2] / 1000.0;
+    EEPROM.get(0, accX);
+    EEPROM.get(sizeof(float), accY);
+    EEPROM.get(2 * sizeof(float), accZ);
+    EEPROM.get(3 * sizeof(float), magX);
+    EEPROM.get(4 * sizeof(float), magY);
+    EEPROM.get(5 * sizeof(float), magZ);
 }
-
 
 void setup() {
     Wire.begin();
@@ -76,7 +69,6 @@ void setup() {
 
     mode = 0;
 }
-
 void loop() {
 
     // Ajouter ce bloc pour détecter l'appui long sur le bouton de calibration
@@ -211,7 +203,6 @@ void loop() {
                         display.print(z_offset, 3);
                         display.display();
                         delay(2000);
-
                     } else {
                         // Calibration de la boussole
                         display.clearDisplay();
@@ -241,7 +232,6 @@ void loop() {
                         display.print(z_offset, 3);
                         display.display();
                         delay(2000);
-
                     }
                     break;
                 }
