@@ -3,13 +3,14 @@
 #include <MPU9250.h>
 #include <Bounce2.h>
 #include <EEPROM.h>
+#include <ESP8266WiFi.h>
 
 
 MPU9250 imu(Wire, 0x68);
 Adafruit_SSD1306 display(128, 32, &Wire, -1);
 Bounce debouncer = Bounce();
 
-const int LED1_PIN = 2;
+const int LED1_PIN = 1;
 const int LED2_PIN = 3;
 const int CALIBRATION_BUTTON_PIN = 4;
 
@@ -45,6 +46,7 @@ void loadOffsets(float &accX, float &accY, float &accZ, float &magX, float &magY
 
 
 void setup() {
+    Wire.begin();
     imu.begin();
     imu.setAccelRange(MPU9250::ACCEL_RANGE_2G);
     imu.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
@@ -87,7 +89,7 @@ void loop() {
         //float roll = atan2(y, z) * 180.0 / PI;
         float pitch = atan2(-x, sqrt(y * y + z * z)) * 180.0 / PI;
 
-        if (pitch >= -1 && pitch <= 1) {
+        if (pitch >= 0 && pitch <= 0) {
             digitalWrite(LED1_PIN, HIGH);
         } else {
             digitalWrite(LED1_PIN, LOW);
@@ -104,7 +106,7 @@ void loop() {
         if (heading < 0) {
             heading += 360.0;
         }
-        if (heading >= 175 && heading <= 185) {
+        if (heading >= 180 && heading <= 180) {
             digitalWrite(LED2_PIN, HIGH);
         } else {
             digitalWrite(LED2_PIN, LOW);
