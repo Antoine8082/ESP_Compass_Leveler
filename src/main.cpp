@@ -7,7 +7,7 @@
 
 
 MPU9250 imu(Wire, 0x68);
-Adafruit_SSD1306 display(128, 32, &Wire, -1);
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
 Bounce debouncer = Bounce();
 
 const int LED1_PIN = 1;
@@ -102,7 +102,8 @@ void loop() {
         delay(100);
 
         imu.readSensor();
-        float heading = atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180.0 / PI;
+        const float DECLINATION_ANGLE_NANTES = 0.0089; // 0°32' = (32/60)*3.14/180 = 0.0089 rad
+        float heading = atan2(imu.getMagY_uT(), imu.getMagX_uT()) * 180.0 / PI - DECLINATION_ANGLE_NANTES;
         if (heading < 0) {
             heading += 360.0;
         }
