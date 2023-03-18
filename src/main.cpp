@@ -4,15 +4,25 @@
 #include <Bounce2.h>
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
-
+#include <D:\ESP32_Compass_Leveler\.pio\libdeps\esp_wroom_02\SimpleKalmanFilter\src\SimpleKalmanFilter.h>
 
 MPU9250 imu(Wire, 0x68);
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 Bounce debouncer = Bounce();
 
+SimpleKalmanFilter kalmanFilterPitch(1, 1, 0.01);
+SimpleKalmanFilter kalmanFilterHeading(1, 1, 0.01);
+
 const int LED1_PIN = 1;
 const int LED2_PIN = 3;
 const int CALIBRATION_BUTTON_PIN = 4;
+
+const int NUM_READINGS = 10;
+float pitchReadings[NUM_READINGS];
+float headingReadings[NUM_READINGS];
+int readIndex = 0;
+float totalPitch = 0;
+float totalHeading = 0;
 
 int mode = 0; // 0 pour le mode de mesure, 1 pour le mode de calibration
 int calibrationType = 0; // 0 pour la calibration du niveau, 1 pour la calibration de la boussole
@@ -89,7 +99,15 @@ void loop() {
         //float roll = atan2(y, z) * 180.0 / PI;
         float pitch = atan2(-x, sqrt(y * y + z * z)) * 180.0 / PI;
 
-        if (pitch >= 0 && pitch <= 0) {
+        // Ajout du filtre de Kalman et de la moyenne mobile pour le pitch
+        float filteredPitch = kalmanFilterPitch.updateEstimate(pitch);
+        totalPitch -= pitchReadings[readIndex];
+        pitchReadings[readIndex] = filteredPitch;
+        totalPitch += pitchReadings[readIndex];
+        readIndex = (readIndex + 1) % NUM_READINGS;
+        float averagePitch = totalPitch / NUM_READINGS;
+
+        if (averagePitch >= 0 && averagePitch <= 0) {
             digitalWrite(LED1_PIN, HIGH);
         } else {
             digitalWrite(LED1_PIN, LOW);
@@ -97,7 +115,7 @@ void loop() {
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print("Pitch:");
-        display.print(pitch, 1);
+        display.print(averagePitch, 1);
         display.display();
         delay(100);
 
@@ -107,14 +125,21 @@ void loop() {
         if (heading < 0) {
             heading += 360.0;
         }
-        if (heading >= 180 && heading <= 180) {
+        // Ajout du filtre de Kalman et de la moyenne mobile pour le cap
+        float filteredHeading = kalmanFilterHeading.updateEstimate(heading);
+        totalHeading -= headingReadings[readIndex];
+        headingReadings[readIndex] = filteredHeading;
+        totalHeading += headingReadings[readIndex];
+        float averageHeading = totalHeading / NUM_READINGS;
+
+        if (averageHeading >= 180 && averageHeading <= 180) {
             digitalWrite(LED2_PIN, HIGH);
         } else {
             digitalWrite(LED2_PIN, LOW);
         }
         display.setCursor(0, 10);
         display.print("Heading:");
-        display.print(heading, 1);
+        display.print(averageHeading, 1);
         display.print("   ");
         display.display();
         delay(100);
@@ -169,7 +194,6 @@ void loop() {
                         display.setCursor(0, 30);
                         display.print("bouton");
                         display.display();
-                        // Code pour la calibration du niveau
                         imu.calibrateAccel();
                         imu.readSensor();
                         float x_offset = -imu.getAccelX_mss();
@@ -200,7 +224,6 @@ void loop() {
                         display.setCursor(0, 30);
                         display.print("bouton");
                         display.display();
-                        // Code pour la calibration de la boussole
                         imu.calibrateMag();
                         imu.readSensor();
                         float x_offset = -imu.getMagX_uT();
