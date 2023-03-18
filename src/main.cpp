@@ -17,7 +17,7 @@ const int LED1_PIN = 1;
 const int LED2_PIN = 3;
 const int CALIBRATION_BUTTON_PIN = 4;
 
-const int NUM_READINGS = 10;
+const int NUM_READINGS = 20;
 float pitchReadings[NUM_READINGS];
 float headingReadings[NUM_READINGS];
 int readIndex = 0;
@@ -109,7 +109,7 @@ void loop() {
         display.print("Pitch:");
         display.print(averagePitch, 1);
         display.display();
-        delay(100);
+        delay(50);
 
         imu.readSensor();
         const float DECLINATION_ANGLE_NANTES = 0.0089; // 0°32' = (32/60)*3.14/180 = 0.0089 rad
@@ -134,7 +134,7 @@ void loop() {
         display.print(averageHeading, 1);
         display.print("   ");
         display.display();
-        delay(100);
+        delay(50);
     }
     else {
         // Affichage pour sélectionner le type de calibration
